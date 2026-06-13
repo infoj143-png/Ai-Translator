@@ -19,14 +19,20 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Show files
+        run: |
+          pwd
+          ls
+          find . -name "gradlew"
+
       - name: Make gradlew executable
-        run: chmod +x gradlew
+        run: chmod +x ./AI-Translator-2026-06-12-b86ee/gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: cd AI-Translator-2026-06-12-b86ee && ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AI-Translator-Debug-APK
-          path: app/build/outputs/apk/debug/*.apk
+          name: AI_Translator_APK
+          path: AI-Translator-2026-06-12-b86ee/app/build/outputs/apk/debug/*.apk
