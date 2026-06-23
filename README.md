@@ -1,21 +1,37 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# AI Translator
 
-# Run and deploy your AI Studio app
+A modern AI-powered translation app built with Kotlin, designed to provide seamless and accurate text translations across multiple languages.
 
-This contains everything you need to run your app locally.
+# 🔷 Features
 
-View your app in AI Studio: https://ai.studio/apps/8d6d15f2-bafb-4da0-b8b5-324db61f761c
+- Real-time text translation using AI/ML models
+- Multi-language support
+- Clean, modern user interface
+- Fast and accurate translations
+- Offline capabilities (planned)
 
-## Run Locally
+# 🖈 Screenshots
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+<!-- Add screenshots here -->
 
+# 🔾 Getting Started
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+### Prerequisites
+- Android Studio (if building for Android)
+- Kotlin 1.8+
+
+### Builder
+1. Clone the repository:
+   `psh git clone https://github.com/infoj143-png/Ai-Translator.git``
+2. Open in Android Studio.
+3. Sync the project and run.
+
+# 🖈 Tech Stack
+
+- **Language**: Kotlin
+- **AI Model**: TBM/GPT API (specified in app)
+- **Architecture**: MVPM (Model-View-Presenter)
+
+# 🕥 License
+
+This project is licensed under the MIT License - see the [LICENSE] file for details.
