@@ -13,26 +13,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 21
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 17
 
-      - name: Show files
+      - name: Setup fallback environment variables
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          pwd
-          ls
-          find . -name "gradlew"
+          KEY="${GEMINI_API_KEY:-DUMMY_GEMINI_API_KEY}"
+          if [ ! -f .env ]; then
+            echo "GEMINI_API_KEY=$KEY" > .env
+          fi
 
       - name: Make gradlew executable
-        run: chmod +x ./AI-Translator-2026-06-12-b86ee/gradlew
+        run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: cd AI-Translator-2026-06-12-b86ee && ./gradlew assembleDebug --stacktrace
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'DUMMY_GEMINI_API_KEY' }}
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AI_Translator_APK
-          path: AI-Translator-2026-06-12-b86ee/app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk
