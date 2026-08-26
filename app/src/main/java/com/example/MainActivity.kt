@@ -85,15 +85,31 @@ import com.example.ui.theme.MyApplicationTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        try {
+            enableEdgeToEdge()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         
         // Retrieve the optional deep link URL if launched externally
-        val deepLinkUrl = intent?.dataString
+        val deepLinkUrl = try {
+            intent?.dataString
+        } catch (e: Exception) {
+            null
+        }
         
-        setContent {
-            MyApplicationTheme {
-                MainScreen(initialTargetUrl = deepLinkUrl)
+        try {
+            setContent {
+                MyApplicationTheme {
+                    MainScreen(initialTargetUrl = deepLinkUrl)
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            try {
+                Toast.makeText(this, "Error initializing application", Toast.LENGTH_LONG).show()
+            } catch (_: Exception) {}
         }
     }
 }
@@ -207,13 +223,18 @@ fun MainScreen(initialTargetUrl: String? = null) {
                     Row {
                         IconButton(
                             onClick = {
-                                val sendIntent: Intent = Intent().apply {
-                                    action = Intent.ACTION_SEND
-                                    putExtra(Intent.EXTRA_TEXT, currentUrl)
-                                    type = "text/plain"
+                                try {
+                                    val sendIntent: Intent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_TEXT, currentUrl)
+                                        type = "text/plain"
+                                    }
+                                    val shareIntent = Intent.createChooser(sendIntent, "Share URL")
+                                    context.startActivity(shareIntent)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    Toast.makeText(context, "Unable to share URL", Toast.LENGTH_SHORT).show()
                                 }
-                                val shareIntent = Intent.createChooser(sendIntent, "Share URL")
-                                context.startActivity(shareIntent)
                             },
                             modifier = Modifier.testTag("action_share_btn")
                         ) {
@@ -224,6 +245,7 @@ fun MainScreen(initialTargetUrl: String? = null) {
                             )
                         }
                         
+
                         IconButton(
                             onClick = {
                                 if (isNetworkAvailable(context)) {
@@ -357,7 +379,11 @@ fun MainScreen(initialTargetUrl: String? = null) {
                     if (isNetworkAvailable(context)) {
                         isOffline = false
                         if (webViewRef != null) {
-                            webViewRef?.reload()
+                            try {
+                                webViewRef?.reload()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         }
                     } else {
                         Toast.makeText(context, "No network connection detected.", Toast.LENGTH_SHORT).show()
@@ -365,101 +391,113 @@ fun MainScreen(initialTargetUrl: String? = null) {
                 })
             } else {
                 // Fullscreen interactive WebView Wrapper containing the client translation site
-                AndroidView(
-                    factory = { ctx ->
-                        WebView(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            
-                            // Fine tune Android web capability settings for advanced SPA/NextJS
-                            settings.apply {
-                                javaScriptEnabled = true
-                                domStorageEnabled = true
-                                databaseEnabled = true
-                                useWideViewPort = true
-                                loadWithOverviewMode = true
-                                builtInZoomControls = true
-                                displayZoomControls = false
-                                cacheMode = WebSettings.LOAD_DEFAULT
-                                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-                                
-                                // Clean layout and proper scale
-                                useWideViewPort = true
-                                loadWithOverviewMode = true
-                            }
+                var webViewError by remember { mutableStateOf(false) }
+                if (webViewError) {
+                    OfflineScreen(onRetry = {
+                        webViewError = false
+                        if (isNetworkAvailable(context)) {
+                            isOffline = false
+                        } else {
+                            isOffline = true
+                        }
+                    })
+                } else {
+                    AndroidView(
+                        factory = { ctx ->
+                            try {
+                                WebView(ctx).apply {
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT
+                                    )
 
-                            webViewClient = object : WebViewClient() {
-                                override fun onPageStarted(
-                                    view: WebView?,
-                                    url: String?,
-                                    favicon: android.graphics.Bitmap?
-                                ) {
-                                    isLoading = true
-                                    currentUrl = url ?: initialUrl
-                                    isOffline = !isNetworkAvailable(ctx)
-                                }
-
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    isLoading = false
-                                    progress = 100
-                                    currentUrl = url ?: initialUrl
-                                    
-                                    // Update bottom bar state
-                                    canGoBack = view?.canGoBack() == true
-                                    canGoForward = view?.canGoForward() == true
-                                }
-
-                                override fun onReceivedError(
-                                    view: WebView?,
-                                    request: WebResourceRequest?,
-                                    error: WebResourceError?
-                                ) {
-                                    super.onReceivedError(view, request, error)
-                                    // Switch to beautiful native error screen on main page load failures
-                                    if (request?.isForMainFrame == true) {
-                                        isOffline = true
+                                    // Fine tune Android web capability settings for advanced SPA/NextJS
+                                    settings.apply {
+                                        javaScriptEnabled = true
+                                        domStorageEnabled = true
+                                        databaseEnabled = true
+                                        useWideViewPort = true
+                                        loadWithOverviewMode = true
+                                        builtInZoomControls = true
+                                        displayZoomControls = false
+                                        cacheMode = WebSettings.LOAD_DEFAULT
+                                        mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                                     }
-                                }
 
-                                @Deprecated("Deprecated in Java")
-                                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                                    if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
-                                        // Load external URLs in external browser if requested to prevent breaking wrapper flow,
-                                        // but keep lovat-six domains here.
-                                        if (url.contains("translator-lovat-six.vercel.app")) {
-                                            view?.loadUrl(url)
+                                    webViewClient = object : WebViewClient() {
+                                        override fun onPageStarted(
+                                            view: WebView?,
+                                            url: String?,
+                                            favicon: android.graphics.Bitmap?
+                                        ) {
+                                            isLoading = true
+                                            currentUrl = url ?: initialUrl
+                                            isOffline = !isNetworkAvailable(ctx)
+                                        }
+
+                                        override fun onPageFinished(view: WebView?, url: String?) {
+                                            isLoading = false
+                                            progress = 100
+                                            currentUrl = url ?: initialUrl
+
+                                            // Update bottom bar state
+                                            canGoBack = view?.canGoBack() == true
+                                            canGoForward = view?.canGoForward() == true
+                                        }
+
+                                        override fun onReceivedError(
+                                            view: WebView?,
+                                            request: WebResourceRequest?,
+                                            error: WebResourceError?
+                                        ) {
+                                            super.onReceivedError(view, request, error)
+                                            // Switch to beautiful native error screen on main page load failures
+                                            if (request?.isForMainFrame == true) {
+                                                isOffline = true
+                                            }
+                                        }
+
+                                        @Deprecated("Deprecated in Java")
+                                        override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                                            if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                                                if (url.contains("translator-lovat-six.vercel.app")) {
+                                                    view?.loadUrl(url)
+                                                    return false
+                                                } else {
+                                                    try {
+                                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                                        ctx.startActivity(intent)
+                                                        return true
+                                                    } catch (e: Exception) {
+                                                        return false
+                                                    }
+                                                }
+                                            }
                                             return false
-                                        } else {
-                                            try {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                                ctx.startActivity(intent)
-                                                return true
-                                            } catch (e: Exception) {
-                                                return false
+                                        }
+                                    }
+
+                                    webChromeClient = object : WebChromeClient() {
+                                        override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                                            progress = newProgress
+                                            if (newProgress >= 100) {
+                                                isLoading = false
                                             }
                                         }
                                     }
-                                    return false
-                                }
-                            }
 
-                            webChromeClient = object : WebChromeClient() {
-                                override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                                    progress = newProgress
-                                    if (newProgress >= 100) {
-                                        isLoading = false
-                                    }
+                                    loadUrl(initialUrl)
+                                    webViewRef = this
                                 }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                webViewError = true
+                                android.view.View(ctx)
                             }
-
-                            loadUrl(initialUrl)
-                            webViewRef = this
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             
             // Subtle indicator if loading in background initially
@@ -581,14 +619,19 @@ fun OfflineScreen(onRetry: () -> Unit) {
 }
 
 private fun isNetworkAvailable(context: Context): Boolean {
-    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    val network = connectivityManager.activeNetwork ?: return false
-    val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
-    return when {
-        activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
-        activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
-        activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
-        else -> false
+    return try {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return false
+        val network = connectivityManager.activeNetwork ?: return false
+        val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+        when {
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+            activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+            else -> false
+        }
+    } catch (e: Exception) {
+        false
     }
 }
 
