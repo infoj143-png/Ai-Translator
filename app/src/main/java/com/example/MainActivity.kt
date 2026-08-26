@@ -23,7 +23,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,7 +61,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,6 +72,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -91,14 +90,14 @@ class MainActivity : ComponentActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        
+
         // Retrieve the optional deep link URL if launched externally
         val deepLinkUrl = try {
             intent?.dataString
         } catch (e: Exception) {
             null
         }
-        
+
         try {
             setContent {
                 MyApplicationTheme {
@@ -119,29 +118,37 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(initialTargetUrl: String? = null) {
     val context = LocalContext.current
     val initialUrl = initialTargetUrl ?: "https://translator-lovat-six.vercel.app/"
-    
+
     // Web load status states
     var isLoading by remember { mutableStateOf(true) }
     var progress by remember { mutableIntStateOf(0) }
     var isOffline by remember { mutableStateOf(!isNetworkAvailable(context)) }
     var currentUrl by remember { mutableStateOf(initialUrl) }
-    
+
     // We keep a local reference to the WebView to manage back/forward actions
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
-    
+
     // Navigation stack capability status to update bottom bar states live
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
-    
+
     // Handle Android system back presses to navigate internally in the WebView
     BackHandler(enabled = canGoBack) {
-        webViewRef?.goBack()
+        try {
+            webViewRef?.goBack()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
-    
+
     // Periodically verify connectivity when offline
     LaunchedEffect(isOffline) {
         if (!isOffline) {
-            webViewRef?.reload()
+            try {
+                webViewRef?.reload()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -182,18 +189,18 @@ fun MainScreen(initialTargetUrl: String? = null) {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "L",
+                                text = "A",
                                 color = Color.White,
                                 fontWeight = FontWeight.Black,
                                 fontSize = 18.sp
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.width(12.dp))
-                        
+
                         Column {
                             Text(
-                                text = "Lovat Translator",
+                                text = stringResource(R.string.app_name),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -218,7 +225,7 @@ fun MainScreen(initialTargetUrl: String? = null) {
                             }
                         }
                     }
-                    
+
                     // Share & Refresh action buttons
                     Row {
                         IconButton(
@@ -244,13 +251,16 @@ fun MainScreen(initialTargetUrl: String? = null) {
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        
 
                         IconButton(
                             onClick = {
                                 if (isNetworkAvailable(context)) {
                                     isOffline = false
-                                    webViewRef?.reload()
+                                    try {
+                                        webViewRef?.reload()
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    }
                                 } else {
                                     isOffline = true
                                     Toast.makeText(context, "No connection available", Toast.LENGTH_SHORT).show()
@@ -266,9 +276,9 @@ fun MainScreen(initialTargetUrl: String? = null) {
                         }
                     }
                 }
-                
-                // Slick Material 3 Loading progress indicator
-                AnimatedVisibility (
+
+                // Loading progress indicator
+                AnimatedVisibility(
                     visible = isLoading && !isOffline,
                     enter = fadeIn(),
                     exit = fadeOut()
@@ -285,7 +295,6 @@ fun MainScreen(initialTargetUrl: String? = null) {
             }
         },
         bottomBar = {
-            // Elegant Control Deck
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -303,7 +312,13 @@ fun MainScreen(initialTargetUrl: String? = null) {
                 ) {
                     // Back button
                     IconButton(
-                        onClick = { webViewRef?.goBack() },
+                        onClick = {
+                            try {
+                                webViewRef?.goBack()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        },
                         enabled = canGoBack,
                         modifier = Modifier.testTag("nav_back_btn")
                     ) {
@@ -316,7 +331,13 @@ fun MainScreen(initialTargetUrl: String? = null) {
 
                     // Forward button
                     IconButton(
-                        onClick = { webViewRef?.goForward() },
+                        onClick = {
+                            try {
+                                webViewRef?.goForward()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        },
                         enabled = canGoForward,
                         modifier = Modifier.testTag("nav_forward_btn")
                     ) {
@@ -332,7 +353,11 @@ fun MainScreen(initialTargetUrl: String? = null) {
                         onClick = {
                             if (isNetworkAvailable(context)) {
                                 isOffline = false
-                                webViewRef?.loadUrl(initialUrl)
+                                try {
+                                    webViewRef?.loadUrl(initialUrl)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
                             } else {
                                 isOffline = true
                             }
@@ -351,7 +376,7 @@ fun MainScreen(initialTargetUrl: String? = null) {
                         onClick = {
                             Toast.makeText(
                                 context,
-                                "Lovat Translator App - Native Wrapper v1.0",
+                                "AI Translator App - Native Wrapper v1.0",
                                 Toast.LENGTH_LONG
                             ).show()
                         },
@@ -374,7 +399,6 @@ fun MainScreen(initialTargetUrl: String? = null) {
                 .background(MaterialTheme.colorScheme.background)
         ) {
             if (isOffline) {
-                // High-End Custom Native Offline UX screen
                 OfflineScreen(onRetry = {
                     if (isNetworkAvailable(context)) {
                         isOffline = false
@@ -390,7 +414,6 @@ fun MainScreen(initialTargetUrl: String? = null) {
                     }
                 })
             } else {
-                // Fullscreen interactive WebView Wrapper containing the client translation site
                 var webViewError by remember { mutableStateOf(false) }
                 if (webViewError) {
                     OfflineScreen(onRetry = {
@@ -411,7 +434,6 @@ fun MainScreen(initialTargetUrl: String? = null) {
                                         ViewGroup.LayoutParams.MATCH_PARENT
                                     )
 
-                                    // Fine tune Android web capability settings for advanced SPA/NextJS
                                     settings.apply {
                                         javaScriptEnabled = true
                                         domStorageEnabled = true
@@ -440,7 +462,6 @@ fun MainScreen(initialTargetUrl: String? = null) {
                                             progress = 100
                                             currentUrl = url ?: initialUrl
 
-                                            // Update bottom bar state
                                             canGoBack = view?.canGoBack() == true
                                             canGoForward = view?.canGoForward() == true
                                         }
@@ -451,7 +472,6 @@ fun MainScreen(initialTargetUrl: String? = null) {
                                             error: WebResourceError?
                                         ) {
                                             super.onReceivedError(view, request, error)
-                                            // Switch to beautiful native error screen on main page load failures
                                             if (request?.isForMainFrame == true) {
                                                 isOffline = true
                                             }
@@ -499,8 +519,7 @@ fun MainScreen(initialTargetUrl: String? = null) {
                     )
                 }
             }
-            
-            // Subtle indicator if loading in background initially
+
             if (isLoading && !isOffline) {
                 Box(
                     modifier = Modifier
@@ -553,7 +572,6 @@ fun OfflineScreen(onRetry: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Big Beautiful warning graphic
             Box(
                 modifier = Modifier
                     .size(100.dp)
@@ -568,9 +586,9 @@ fun OfflineScreen(onRetry: () -> Unit) {
                     modifier = Modifier.size(48.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Text(
                 text = "Connection Offline",
                 style = MaterialTheme.typography.headlineMedium,
@@ -578,19 +596,19 @@ fun OfflineScreen(onRetry: () -> Unit) {
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
-                text = "Lovat Translator is currently unable to load. Please verify your internet connection status and try checking again.",
+                text = "AI Translator is currently unable to load. Please verify your internet connection status and try checking again.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
-            
+
             Spacer(modifier = Modifier.height(32.dp))
-            
+
             Button(
                 onClick = onRetry,
                 colors = ButtonDefaults.buttonColors(
@@ -634,4 +652,3 @@ private fun isNetworkAvailable(context: Context): Boolean {
         false
     }
 }
-
