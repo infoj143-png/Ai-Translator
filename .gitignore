@@ -20,3 +20,6 @@ salt
 
 # Environment / local files
 .env
+
+# Allow Gradle Wrapper JAR
+!gradle/wrapper/gradle-wrapper.jar
